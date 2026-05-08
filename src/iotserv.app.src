@@ -1,0 +1,8 @@
+{application, iotserv,
+ [{description, "IoT Server"},
+  {vsn, "1.0"},
+  {registered, []},
+  {mod, {iotserv_app, []}},
+  {applications, [kernel, stdlib]},
+  {env, [{dets_name, "iotserv.dets"}]},
+  {modules, []}]}.
