@@ -1,3 +1,5 @@
+%% @doc Основной сервер для управления IoT устройствами
+%% @end
 -module(iotserv).
 -behaviour(gen_server).
 
@@ -11,96 +13,78 @@
 
 -include("iotserv.hrl").
 
-%% @doc Запуск сервера с параметрами из конфигурации
--spec start_link() -> {ok, pid()}.
+%% @doc Запускает сервер, читая конфигурацию из JSON файла.
+-spec start_link() -> {ok, pid()} | {error, term()}.
 start_link() ->
-    {ok, FileName} = application:get_env(dets_name),
+    FileName = read_config_from_json(),
     start_link(FileName).
 
-%% @doc Запуск сервера с указанием файла DETS
--spec start_link(string()) -> {ok, pid()}.
+%% @doc Запускает сервер с прямым указанием пути к DETS файлу.
+-spec start_link(string()) -> {ok, pid()} | {error, term()}.
 start_link(FileName) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, FileName, []).
 
-%% @doc Остановка сервера
+%% @doc Останавливает сервер.
 -spec stop() -> ok.
 stop() ->
     gen_server:cast(?MODULE, stop).
 
-%% @doc Добавление устройства (минимальный вариант)
--spec add_device(device_id(), device_name()) -> ok | {error, already_exists}.
+%% @doc Добавляет новое устройство.
 add_device(Id, Name) ->
     add_device(Id, Name, undefined, undefined, []).
-
-%% @doc Добавление устройства с адресом
--spec add_device(device_id(), device_name(), device_address()) -> ok | {error, already_exists}.
 add_device(Id, Name, Address) ->
     add_device(Id, Name, Address, undefined, []).
-
-%% @doc Добавление устройства с температурой
--spec add_device(device_id(), device_name(), device_address(), temperature()) -> ok | {error, already_exists}.
 add_device(Id, Name, Address, Temperature) ->
     add_device(Id, Name, Address, Temperature, []).
-
-%% @doc Добавление устройства со всеми параметрами
--spec add_device(device_id(), device_name(), device_address(), temperature(), [metric()]) -> ok | {error, already_exists}.
 add_device(Id, Name, Address, Temperature, Metrics) ->
     gen_server:call(?MODULE, {add_device, Id, Name, Address, Temperature, Metrics}).
 
-%% @doc Удаление устройства по id
+%% @doc Удаляет устройство.
 -spec delete_device(device_id()) -> ok | {error, instance}.
 delete_device(Id) ->
     gen_server:call(?MODULE, {delete_device, Id}).
 
-%% @doc Изменение температуры
+%% @doc Изменяет температуру.
 -spec change_temperature(device_id(), temperature()) -> ok | {error, instance}.
 change_temperature(Id, Temperature) ->
     gen_server:call(?MODULE, {change_temperature, Id, Temperature}).
 
-%% @doc Изменение метрик
+%% @doc Изменяет метрики.
 -spec change_metrics(device_id(), [metric()]) -> ok | {error, instance}.
 change_metrics(Id, Metrics) ->
     gen_server:call(?MODULE, {change_metrics, Id, Metrics}).
 
-%% @doc Изменение названия
+%% @doc Изменяет название.
 -spec change_name(device_id(), device_name()) -> ok | {error, instance}.
 change_name(Id, Name) ->
     gen_server:call(?MODULE, {change_name, Id, Name}).
 
-%% @doc Изменение адреса
+%% @doc Изменяет адрес.
 -spec change_address(device_id(), device_address()) -> ok | {error, instance}.
 change_address(Id, Address) ->
     gen_server:call(?MODULE, {change_address, Id, Address}).
 
-%% @doc Поиск устройства по id
+%% @doc Поиск устройства.
 -spec lookup_id(device_id()) -> {ok, #device{}} | {error, instance}.
 lookup_id(Id) ->
     iotserv_db:lookup_id(Id).
 
-%% @doc Получение списка всех устройств
+%% @doc Получение всех устройств.
 -spec get_all() -> [#device{}].
 get_all() ->
     gen_server:call(?MODULE, get_all).
 
-%% @private
--spec init(string()) -> {ok, null}.
 init(FileName) ->
     iotserv_db:create_tables(FileName),
     iotserv_db:restore_backup(),
     {ok, null}.
 
-%% @private
--spec terminate(term(), null) -> ok.
 terminate(_Reason, _LoopData) ->
     iotserv_db:close_tables().
 
-%% @private
--spec handle_cast(stop, null) -> {stop, normal, null}.
 handle_cast(stop, LoopData) ->
     {stop, normal, LoopData}.
 
-%% @private
--spec handle_call(term(), {pid(), term()}, null) -> {reply, term(), null}.
 handle_call({add_device, Id, Name, Address, Temperature, Metrics}, _From, LoopData) ->
     Reply = case iotserv_db:lookup_id(Id) of
         {error, instance} ->
@@ -172,3 +156,26 @@ handle_call(get_all, _From, LoopData) ->
 
 handle_call(_Request, _From, LoopData) ->
     {reply, {error, unknown_request}, LoopData}.
+
+%% @doc Возвращает путь к DETS файлу из JSON конфигурации.
+read_config_from_json() ->
+    ConfigPath = get_config_path(),
+    case file:read_file(ConfigPath) of
+        {ok, FileContent} ->
+            %% jsx:decode с [return_maps] возвращает СРАЗУ map, а не {ok, map}
+            Json = jsx:decode(FileContent, [return_maps]),
+            case maps:get(<<"dets_file">>, Json, undefined) of
+                undefined ->
+                    "iotserv.dets";
+                DetsFile ->
+                    binary_to_list(DetsFile)
+            end;
+        {error, _Reason} ->
+            "iotserv.dets"
+    end.
+
+get_config_path() ->
+    case os:getenv("IOTSERV_CONFIG") of
+        false -> "config.json";
+        Path -> Path
+    end.

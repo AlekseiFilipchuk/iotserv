@@ -1,3 +1,5 @@
+%% @doc Типы и записи для IoT устройства
+%% @end
 -type device_id() :: integer().
 -type device_name() :: binary().
 -type device_address() :: binary().

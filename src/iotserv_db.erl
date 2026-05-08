@@ -1,3 +1,5 @@
+%% @doc Модуль для работы с хранилищем (ETS + DETS)
+%% @end
 -module(iotserv_db).
 -include("iotserv.hrl").
 
@@ -7,42 +9,30 @@
 -define(DEVICE_RAM, deviceRam).
 -define(DEVICE_DISK, deviceDisk).
 
-%% @doc Создание таблиц при инициализации
--spec create_tables(string()) -> ok.
 create_tables(FileName) ->
     ets:new(?DEVICE_RAM, [named_table, {keypos, #device.id}]),
     dets:open_file(?DEVICE_DISK, [{file, FileName}, {keypos, #device.id}]),
     ok.
 
-%% @doc Закрытие таблиц при остановке
--spec close_tables() -> ok.
 close_tables() ->
     ets:delete(?DEVICE_RAM),
     dets:close(?DEVICE_DISK),
     ok.
 
-%% @doc Добавление нового устройства
--spec add_device(#device{}) -> ok.
 add_device(Device) ->
     update_device(Device).
 
-%% @doc Обновление устройства (синхронно в ETS и DETS)
--spec update_device(#device{}) -> ok.
 update_device(Device) ->
     ets:insert(?DEVICE_RAM, Device),
     dets:insert(?DEVICE_DISK, Device),
     ok.
 
-%% @doc Поиск устройства по id
--spec lookup_id(device_id()) -> {ok, #device{}} | {error, instance}.
 lookup_id(Id) ->
     case ets:lookup(?DEVICE_RAM, Id) of
         [Device] -> {ok, Device};
         [] -> {error, instance}
     end.
 
-%% @doc Удаление устройства по id
--spec delete_device(device_id()) -> ok | {error, instance}.
 delete_device(Id) ->
     case lookup_id(Id) of
         {ok, Device} ->
@@ -53,8 +43,6 @@ delete_device(Id) ->
             {error, instance}
     end.
 
-%% @doc Восстановление данных из DETS при запуске
--spec restore_backup() -> ok.
 restore_backup() ->
     Insert = fun(Device) ->
         ets:insert(?DEVICE_RAM, Device),
@@ -62,8 +50,6 @@ restore_backup() ->
     end,
     dets:traverse(?DEVICE_DISK, Insert).
 
-%% @doc Удаление всех устройств
--spec delete_all() -> ok.
 delete_all() ->
     ets:delete_all_objects(?DEVICE_RAM),
     dets:delete_all_objects(?DEVICE_DISK),

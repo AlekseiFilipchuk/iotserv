@@ -1,39 +1,30 @@
 Erlang/OTP 25 [erts-13.2.2.5] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns]
 
 Eshell V13.2.2.5  (abort with ^G)
-1> ===> Booted iotserv
+1> ===> Booted jsx
+===> Booted iotserv
 application:start(iotserv).
 {error,{already_started,iotserv}}
 2> iotserv:add_device(1, <<"Sensor1">>).
 ok
-3> iotserv:add_device(2, <<"Sensor2">>, <<"Room A">>). 
-ok
+3> iotserv:add_device(2, <<"Sensor2">>, <<"Room 
+A">>).
+{error,already_exists}
 4> iotserv:add_device(3, <<"Sensor3">>, <<"Room B">>, 23.5).
-ok
+{error,already_exists}
 5> iotserv:add_device(4, <<"Sensor4">>, <<"Room C">>, 24.0, [{temp, 24}, {humidity, 60}]).
-ok
-6> iotserv:add_device(1, <<"Sensor1_dup">>).
 {error,already_exists}
-7> iotserv:add_device(1, <<"Sensor1_dup">>).
-{error,already_exists}
-8> iotserv:lookup_id(2).
-{ok,{device,2,<<"Sensor2">>,<<"Room A">>,
-            undefined,[]}}
-9> iotserv:lookup_id(99).
-{error,instance}
-10> iotserv:change_temperature(2, 25.5).
-ok
-11> iotserv:change_metrics(2, [{temp, 25}, {humidity, 55}]).
-ok
-12> iotserv:change_name(2, <<"NewSensor2">>).
-ok
-13> iotserv:change_address(2, <<"Room X">>).
-ok
-14> iotserv:lookup_id(2).
+6> iotserv:lookup_id(2).
 {ok,{device,2,<<"NewSensor2">>,<<"Room X">>,
             25.5,
             [{temp,25},{humidity,55}]}}
-15> iotserv:get_all().
+7> iotserv:change_temperature(2, 25.5).
+ok
+8> iotserv:lookup_id(2).
+{ok,{device,2,<<"NewSensor2">>,<<"Room X">>,
+            25.5,
+            [{temp,25},{humidity,55}]}}
+9> iotserv:get_all().
 [{device,1,<<"Sensor1">>,undefined,undefined,
          []},
  {device,2,<<"NewSensor2">>,<<"Room X">>,25.5,
@@ -42,49 +33,29 @@ ok
          [{temp,24},{humidity,60}]},
  {device,3,<<"Sensor3">>,<<"Room B">>,23.5,
          []}]
-16> iotserv:delete_device(1).
+10> iotserv:delete_device(1).
 ok
-17> iotserv:lookup_id(1).
+11> iotserv:lookup_id(1).
 {error,instance}
-18> iotserv:get_all().
-[{device,2,<<"NewSensor2">>,<<"Room X">>,25.5,
-         [{temp,25},{humidity,55}]},
- {device,4,<<"Sensor4">>,<<"Room C">>,24.0,
-         [{temp,24},{humidity,60}]},
- {device,3,<<"Sensor3">>,<<"Room B">>,23.5,
-         []}]
-19> iotserv:stop().
+12> application:stop(iotserv).
 ok
-20> =SUPERVISOR REPORT==== 8-May-2026::23:14:13.394451 ===
-    supervisor: {local,iotserv_sup}
-    errorContext: child_terminated
-    reason: normal
-    offender: [{pid,<0.142.0>},
-               {id,iotserv},
-               {mfargs,{iotserv,start_link,[]}},
-               {restart_type,permanent},
-               {significant,false},
-               {shutdown,2000},
-               {child_type,worker}]
-21> application:stop(iotserv).
-=INFO REPORT==== 8-May-2026::23:57:35.477552 ===
+13> =INFO REPORT==== 9-May-2026::00:58:38.758086 ===
     application: iotserv
     exited: stopped
     type: temporary
 
+application:start(iotserv).
 ok
-22> application:start(iotserv).
-ok
-23> iotserv:lookup_id(2).
+14> iotserv:lookup_id(2).
 {ok,{device,2,<<"NewSensor2">>,<<"Room X">>,
             25.5,
             [{temp,25},{humidity,55}]}}
-24> iotserv:get_all().
+15> iotserv:get_all().
 [{device,2,<<"NewSensor2">>,<<"Room X">>,25.5,
          [{temp,25},{humidity,55}]},
  {device,4,<<"Sensor4">>,<<"Room C">>,24.0,
          [{temp,24},{humidity,60}]},
  {device,3,<<"Sensor3">>,<<"Room B">>,23.5,
          []}]
-25> q().
+16> q().
 ok
