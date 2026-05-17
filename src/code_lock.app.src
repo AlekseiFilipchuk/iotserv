@@ -1,0 +1,7 @@
+{application, code_lock,
+ [{description, "Code lock with gen_statem"},
+  {vsn, "1.0"},
+  {registered, []},
+  {mod, {code_lock_app, []}},
+  {applications, [kernel, stdlib]},
+  {modules, []}]}.

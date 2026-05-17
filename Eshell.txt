@@ -1,61 +1,81 @@
 Erlang/OTP 25 [erts-13.2.2.5] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns]
 
 Eshell V13.2.2.5  (abort with ^G)
-1> ===> Booted jsx
-===> Booted iotserv
-application:start(iotserv).
-{error,{already_started,iotserv}}
-2> iotserv:add_device(1, <<"Sensor1">>).
+1> Lock
+===> Booted code_lock
+code_lock:button(1).
 ok
-3> iotserv:add_device(2, <<"Sensor2">>, <<"Room 
-A">>).
-{error,already_exists}
-4> iotserv:add_device(3, <<"Sensor3">>, <<"Room B">>, 23.5).
-{error,already_exists}
-5> iotserv:add_device(4, <<"Sensor4">>, <<"Room C">>, 24.0, [{temp, 24}, {humidity, 60}]).
-{error,already_exists}
-6> iotserv:lookup_id(2).
-{ok,{device,2,<<"NewSensor2">>,<<"Room X">>,
-            25.5,
-            [{temp,25},{humidity,55}]}}
-7> iotserv:change_temperature(2, 25.5).
+2> code_lock:button(2).
 ok
-8> iotserv:lookup_id(2).
-{ok,{device,2,<<"NewSensor2">>,<<"Room X">>,
-            25.5,
-            [{temp,25},{humidity,55}]}}
-9> iotserv:get_all().
-[{device,1,<<"Sensor1">>,undefined,undefined,
-         []},
- {device,2,<<"NewSensor2">>,<<"Room X">>,25.5,
-         [{temp,25},{humidity,55}]},
- {device,4,<<"Sensor4">>,<<"Room C">>,24.0,
-         [{temp,24},{humidity,60}]},
- {device,3,<<"Sensor3">>,<<"Room B">>,23.5,
-         []}]
-10> iotserv:delete_device(1).
+3> code_lock:button(3).
 ok
-11> iotserv:lookup_id(1).
-{error,instance}
-12> application:stop(iotserv).
+4> code_lock:button(4).
+Unlock
 ok
-13> =INFO REPORT==== 9-May-2026::00:58:38.758086 ===
-    application: iotserv
-    exited: stopped
+5> code_lock:change_code([4,3,2,1]).
+Code changed from [1,2,3,4] to [4,3,2,1]
+ok
+Lock
+Door locked after 10 seconds
+6> code_lock:button(4).             
+ok
+7> code_lock:button(3).             
+ok
+8> code_lock:button(2).             
+ok
+9> code_lock:button(1).
+Unlock
+ok
+Lock
+Door locked after 10 seconds
+10> code_lock:button(1).
+ok
+11> code_lock:button(1).
+ok
+12> code_lock:button(1).
+ok
+13> code_lock:button(1).
+Wrong code! Attempt 1/3
+ok
+14> code_lock:button(1).
+ok
+15> code_lock:button(1).
+ok
+16> code_lock:button(1).
+ok
+17> code_lock:button(1).
+Wrong code! Attempt 2/3
+ok
+18> code_lock:button(1).
+ok
+19> code_lock:button(2).
+ok
+20> code_lock:button(3).
+ok
+21> code_lock:button(4).
+Wrong code! Attempt 3/3
+Too many wrong attempts! Lock suspended for 10 seconds.
+ok
+22> code_lock:button(4).
+Lock is suspended! Please wait...
+ok
+23> Lock suspension ended, returning to locked state
+Lock
+24> code_lock:button(4).
+ok
+25> code_lock:button(3).
+ok
+26> code_lock:button(2).
+ok
+27> code_lock:button(1).
+Unlock
+ok
+Lock
+Door locked after 10 seconds
+28> code_lock:stop().   
+=INFO REPORT==== 17-May-2026::19:28:51.425496 ===
+    application: code_lock
+    exited: normal
     type: temporary
 
-application:start(iotserv).
-ok
-14> iotserv:lookup_id(2).
-{ok,{device,2,<<"NewSensor2">>,<<"Room X">>,
-            25.5,
-            [{temp,25},{humidity,55}]}}
-15> iotserv:get_all().
-[{device,2,<<"NewSensor2">>,<<"Room X">>,25.5,
-         [{temp,25},{humidity,55}]},
- {device,4,<<"Sensor4">>,<<"Room C">>,24.0,
-         [{temp,24},{humidity,60}]},
- {device,3,<<"Sensor3">>,<<"Room B">>,23.5,
-         []}]
-16> q().
 ok
